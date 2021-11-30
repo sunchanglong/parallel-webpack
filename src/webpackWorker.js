@@ -165,10 +165,12 @@ module.exports = function(configuratorFileName, options, index, expectedConfigLe
 
         function finishedCallback(err, stats) {
             if(err) {
-                console.error('%s fatal error occured', MSG_ERROR);
-                console.error(err);
-                cleanup();
-                return done(err);
+                compiler.close((closeErr) => {
+                    console.error('%s fatal error occured', MSG_ERROR);
+                    console.error(err);
+                    cleanup();
+                    return done(err);
+                })
             }
             if(stats.compilation.errors && stats.compilation.errors.length) {
                 var message = MSG_ERROR + ' Errors building ' + MSG_APP + "\n"
@@ -198,11 +200,14 @@ module.exports = function(configuratorFileName, options, index, expectedConfigLe
                 console.log('%s Finished building %s within %s seconds', chalk.blue('[WEBPACK' + timeStamp + ']'), MSG_APP, chalk.blue((stats.endTime - stats.startTime) / 1000));
             }
             if(!watch) {
-                cleanup();
-                if (disconnected) {
-                    return;
-                }
-                done(null, options.stats ? JSON.stringify(stats.toJson(outputOptions), null, 2) : '');
+                compiler.close((closeErr) => {
+                    cleanup();
+                    if (disconnected) {
+                        return;
+                    }
+                    done(null, options.stats ? JSON.stringify(stats.toJson(outputOptions), null, 2) : '');
+                })
+                
             } else if (!hasCompletedOneCompile) {
                 notifyIPCWatchCompileDone(index);
                 hasCompletedOneCompile = true;
